@@ -8,7 +8,7 @@ import os
 import mimetypes
 from subprocess import Popen
 import shlex
-
+import time
 from redlib.api.system import CronDBus, CronDBusError, in_cron, sys_command, DEVNULL
 from redlib.api.misc import Retry, log
 
@@ -18,20 +18,20 @@ class PlayerError(Exception):
 
 
 class Player(object):
-	service_name 		= 'org.mpris.MediaPlayer2.vlc'
-	object_path 		= '/org/mpris/MediaPlayer2'
+	service_name        = 'org.mpris.MediaPlayer2.vlc'
+	object_path         = '/org/mpris/MediaPlayer2'
 
-	main_interface 		= 'org.mpris.MediaPlayer2'
-	player_interface 	= 'org.mpris.MediaPlayer2.Player'
-	tracklist_interface 	= 'org.mpris.MediaPlayer2.TrackList'
-	prop_interface		= 'org.freedesktop.DBus.Properties'
+	main_interface      = 'org.mpris.MediaPlayer2'
+	player_interface    = 'org.mpris.MediaPlayer2.Player'
+	tracklist_interface     = 'org.mpris.MediaPlayer2.TrackList'
+	prop_interface      = 'org.freedesktop.DBus.Properties'
 
-	obj_no_track		= '/org/mpris/MediaPlayer2/TrackList/NoTrack'
+	obj_no_track        = '/org/mpris/MediaPlayer2/TrackList/NoTrack'
 
 	def __init__(self):
-		self._player 	= None
-		self._prop 	= None
-		self._crondbus 	= None
+		self._player    = None
+		self._prop  = None
+		self._crondbus  = None
 		self._tracklist = None
 
 		self.setup_crondbus()
@@ -53,15 +53,16 @@ class Player(object):
 			print(e)
 			raise PlayerError('vlc is not running')
 
-		self._player 	= dbus.Interface(player_obj, dbus_interface=self.player_interface)
+		self._player    = dbus.Interface(player_obj, dbus_interface=self.player_interface)
 		self._tracklist = dbus.Interface(player_obj, dbus_interface=self.tracklist_interface)
-		self._prop 	= dbus.Interface(player_obj, dbus_interface=self.prop_interface)
-		self._main 	= dbus.Interface(player_obj, dbus_interface=self.main_interface)
+		self._prop  = dbus.Interface(player_obj, dbus_interface=self.prop_interface)
+		self._main  = dbus.Interface(player_obj, dbus_interface=self.main_interface)
 
 
 	def launch(self):
 		try:
 			r = Popen(['vlc'], stdout=DEVNULL, stderr=DEVNULL)
+			time.sleep(6)
 		except OSError as e:
 			print(e)
 			raise PlayerError("cannot launch vlc, may be it's not installed")
@@ -180,12 +181,12 @@ class Player(object):
 
 		mget = lambda k : metadata.get(k, None)
 
-		info['album'] 	= unc(mget('xesam:album'))
-		info['title'] 	= unc(mget('xesam:title'))
-		info['artist'] 	= unc(mget('xesam:artist')[0]) if mget('xesam:artist') is not None and len(mget('xesam:artist')) > 0 else None
-		info['length'] 	= unc(str(int(mget('vlc:length') / 1000))) if mget('vlc:length') is not None else None
-		info['path']	= unc(unquote(mget('xesam:url')))
-		info['genre'] 	= unc(mget('xesam:genre')[0]) if mget('xesam:genre') is not None and len(mget('xesam:genre')) > 0 else None
+		info['album']   = unc(mget('xesam:album'))
+		info['title']   = unc(mget('xesam:title'))
+		info['artist']  = unc(mget('xesam:artist')[0]) if mget('xesam:artist') is not None and len(mget('xesam:artist')) > 0 else None
+		info['length']  = unc(str(int(mget('vlc:length') / 1000))) if mget('vlc:length') is not None else None
+		info['path']    = unc(unquote(mget('xesam:url')))
+		info['genre']   = unc(mget('xesam:genre')[0]) if mget('xesam:genre') is not None and len(mget('xesam:genre')) > 0 else None
 
 		return info
 		
@@ -215,7 +216,7 @@ class Player(object):
 			self.stop()
 			self.volume = saved_volume
 
-		self._main.Quit()		
+		self._main.Quit()       
 
 
 	def __del__(self):
